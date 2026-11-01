@@ -1,0 +1,7 @@
+package edu.textbook.selection.service;
+import org.springframework.context.annotation.*;
+import java.time.Clock;
+@Configuration
+public class TimeConfiguration {
+    @Bean public Clock clock() { return Clock.systemUTC(); }
+}

@@ -1,0 +1,148 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>选课系统设计与重构案例</title><style>body{font-family:"Microsoft YaHei",sans-serif;color:#243343;background:#f5f6f7;margin:0;line-height:1.8}main{max-width:980px;margin:32px auto;padding:40px 48px;background:white}h1,h2,h3{color:#152a3c;line-height:1.4}h1{font-size:30px}h2{font-size:21px;margin-top:36px}h3{font-size:17px}a{color:#18598a}table{border-collapse:collapse;width:100%;margin:20px 0}th,td{border:1px solid #d9dfe4;padding:10px 14px;text-align:left;vertical-align:top}th{background:#edf1f5}pre{background:#f3f5f7;padding:16px;overflow:auto;white-space:pre-wrap;word-break:break-word;line-height:1.5}code{font-family:Consolas,monospace}li{margin:8px 0}.meta{color:#647383;font-size:14px}img{max-width:100%;height:auto}nav{margin:22px 0;padding:18px 0;border-top:1px solid #d9dfe4;border-bottom:1px solid #d9dfe4}details{margin:18px 0}summary{cursor:pointer;font-weight:bold}@media print{body{background:white}main{padding:0;margin:0;max-width:none}nav,.noprint{display:none}pre{overflow:visible}h2,h3{break-after:avoid}tr,img{break-inside:avoid}}@media(max-width:680px){main{margin:0;padding:24px}h1{font-size:25px}table{font-size:14px}}</style><main><h1>选课系统设计与重构案例</h1><p>本页集中呈现两份设计决策、两份重构记录和需求追踪，供教材审阅与实践阅读。可编辑Markdown原文保留在工程docs的原目录；原始验证记录集中在配套资源包04_测试与验收。</p><h2>ADR 001 单体事务与学生后教学班锁</h2>
+<p>&gt; 历史证据位置：本文件记载的evidence路径指原始测试记录.zip内部的相对路径，统一见配套资源包的04_测试与验收。重新执行自检时，当前结果写入工程根目录evidence。</p>
+<p>状态：采用。</p>
+<p>问题：不同学生会争一个名额，同一学生还会并发选择两个冲突班。只保护教学班会漏掉学生维度的跨班规则，应用进程内锁不能协调多实例。</p>
+<p>备选：①只有教学班悲观锁，不能排除跨班课表冲突；②乐观版本，冲突后需在新事务重读并重做全部规则；③统一取得学生锁后取得教学班锁，在READ_COMMITTED事务内查询、检查、写记录和计数。</p>
+<p>决定：采用③。选、退及成绩写入均遵守学生→教学班顺序。课程、学分、班级时间在开放后固定；MeetingSlot本章仅一个固定周时段。远程通知不进入持锁事务。</p>
+<p>收益：两个竞争维度均被保护，所有本地变更可共同回滚，规则容易复核。</p>
+<p>代价：同一学生写操作串行，热门班有锁等待；死锁/超时不是满额错误，重试须建立新事务并重做检查。未经负载测试不声称吞吐量保证。</p>
+<p>证据：backend/evidence/green中容量竞争、同学生冲突、成绩退课并发与回滚测试；新连接SQL对比计数和ACTIVE数。关联R02/R03/R06、C01/C02/C05/C06。</p><h2>ADR 002 历史行与独立请求快照</h2>
+<p>状态：采用。</p>
+<p>问题：原教材片段复用同一选课行，依当前ACTIVE关系判断重复请求；发生选课→退课→旧请求重试时，当前状态无法代表那次操作是否成功。</p>
+<p>备选：①直接重新激活旧行，会混淆历史与新意图；②每次插历史行并用包含状态的普通唯一键，重复退课历史可能冲突；③保留历史行，生成列只约束ACTIVE，独立请求表保存成功响应。</p>
+<p>决定：采用③。退课旧行WITHDRAWN，再选新行；学生+幂等键唯一并校验目标。请求快照与选课、计数同事务。旧键返回同一快照，即便其关联已经退课，也不创建新选课；新意图必须换键。</p>
+<p>收益：保留审计，可处理响应丢失、并发重复和旧请求重放。</p>
+<p>代价：增加请求存储和快照维护，客户端须理解“操作结果”与“当前课表”不同；本例无过期清理政策，正式系统需另订保留期限。</p>
+<p>证据：旧键退后重放、同键双并发、新键重复有效关系、同键不同目标409、回滚请求表全部撤销。关联R02/R03、C03/C04/C06。</p><h2>重构记录 A 身份与事务边界</h2>
+<p>&gt; 历史证据位置：本文件记载的evidence路径指原始测试记录.zip内部的相对路径，统一见配套资源包的04_测试与验收。重新执行自检时，当前结果写入工程根目录evidence。</p>
+<h2>教学对照：身份与事务边界</h2>
+<p>对照性质：本节旧实现是用于教学比较的最小错误实现，没有实测或部署该反例；新版实际实现位于CourseSelectionController、Actor和EnrollmentService。需求R02/R03，约束C01/C05/C06。后面的“时间窗口偏移”另记本次实际发现并修复的问题。</p>
+<p>修改前：</p>
+<pre><code>// 教学反例：不可信studentId + 独立写入步骤
+var row = enrollmentRepository.save(new Enrollment(request.studentId(), request.classId()));
+classRepository.incrementCount(request.classId());
+return row;</code></pre>
+<p>该结构让页面任意选择学生，且第二步失败可能留下不完整状态，两个步骤也不能共同防超选。</p>
+<p>修改后：</p>
+<pre><code>// CourseSelectionController实际入口
+return service.enroll(actor, request.teachingClassId(), key);
+// EnrollmentService顶层事务
+var student = students.lockById(actor.personId()).orElseThrow(ApiFailure::notFound);
+var target = classes.lockById(classId).orElseThrow(ApiFailure::notFound);
+// 完整规则检查后，人数、Enrollment、请求快照同事务提交</code></pre>
+<p>回归证据：未实现业务阶段真实MySQL红灯保存在backend/evidence/red（用于证明验收测试会失败，不是运行上述反例的记录）；最终同一契约测试通过见green。具体核对伪造studentId400、他人退课403、容量双请求一成一拒、触发器故障后计数/记录/请求表均0。</p>
+<p>收益：身份和原子性有统一入口，Controller不直接写持久化状态。代价：额外Actor、应用服务和锁等待。原始测试成功/失败记录、收益与代价分别保存，不能仅写原则名称。</p>
+<h2>本次实际后端问题：时间窗口偏移</h2>
+<p>这是本工程开发中实际出现的缺陷。R02选课和R03退课共用教学班的选退课窗口，属于C06“原子性及边界”；截止后旧幂等请求的处理同时关联C04“请求幂等”。窗口规定为UTC绝对时刻的左闭右开区间 <code>[open_at, close_at)</code>：开放时刻允许，截止时刻拒绝；CLOSED状态仍禁止新的选退课。</p>
+<h3>失败现象与定位</h3>
+<p>2026-10-31的真实MySQL测试将班3的 <code>open_at</code> 写成 <code>2026-10-31 10:00:00</code>，<code>close_at</code> 写成 <code>12:00:00</code>，二者均按UTC解释。测试通过仅在 <code>src/test</code> 中定义的MutableClock，把当前时间固定到 <code>10:00:00Z</code>。开放时刻的选课却未成功。随后增加直接检查JPA加载值的断言，得到：</p>
+<pre><code>[Extracted: openAt]
+expected: 2026-10-31T10:00 (java.time.LocalDateTime)
+ but was: 2026-10-31T18:00 (java.time.LocalDateTime)
+Tests run: 1, Failures: 1, Errors: 0
+BUILD FAILURE</code></pre>
+<p>原始记录是 09-window-timezone-diagnosis.log。该断言把问题定位到数据库值与实体时间值之间：SQL中的10:00被实体读成18:00，差8小时。在本机JVM默认Asia/Shanghai、连接URL含 <code>serverTimezone=Asia/Shanghai</code>、Hibernate配置 <code>hibernate.jdbc.time_zone=UTC</code> 的组合下，用不携带时区的LocalDateTime表示窗口的绝对时刻，经过JPA/JDBC时间转换后产生了这一偏移。服务用UTC Clock取得的10:00与加载成18:00的开放时间比较，错误地判定“尚未开始”。</p>
+<h3>修改前后代码</h3>
+<p>以下是本次修复前代码的摘录，省略注解以外的实体字段和其他业务检查。时间窗实现当时已经注入Clock，但比较值与持久化值使用LocalDateTime。</p>
+<pre><code>// TeachingClass：修复前的实际字段与边界判断
+@Column(name=&quot;open_at&quot;, nullable=false)
+private LocalDateTime openAt;
+@Column(name=&quot;close_at&quot;, nullable=false)
+private LocalDateTime closeAt;
+
+public void ensureSelectionWindow(LocalDateTime now) {
+    ensureOpen();
+    if (now.isBefore(openAt))
+        throw new BusinessConflict(&quot;WINDOW_NOT_OPEN&quot;, &quot;选退课时间尚未开始&quot;);
+    if (!now.isBefore(closeAt))
+        throw new BusinessConflict(&quot;WINDOW_CLOSED&quot;, &quot;选退课时间已经截止&quot;);
+}
+
+// EnrollmentService：取得锁后检查
+var now = LocalDateTime.now(clock);
+target.ensureSelectionWindow(now);</code></pre>
+<p>修复将窗口和审计时间统一为Instant，服务从同一个可注入Clock取得绝对时刻。生产Clock由 <code>service/TimeConfiguration.java</code> 提供：</p>
+<pre><code>@Bean
+public Clock clock() { return Clock.systemUTC(); }</code></pre>
+<p><code>domain/TeachingClass.java</code> 的当前实现摘录如下；比较条件保留原定的左闭右开语义。</p>
+<pre><code>@Column(name=&quot;open_at&quot;, nullable=false)
+private Instant openAt;
+@Column(name=&quot;close_at&quot;, nullable=false)
+private Instant closeAt;
+
+public void ensureSelectionWindow(Instant now) {
+    ensureOpen();
+    if (now.isBefore(openAt))
+        throw new BusinessConflict(&quot;WINDOW_NOT_OPEN&quot;, &quot;选退课时间尚未开始&quot;);
+    if (!now.isBefore(closeAt))
+        throw new BusinessConflict(&quot;WINDOW_CLOSED&quot;, &quot;选退课时间已经截止&quot;);
+}</code></pre>
+<p><code>service/EnrollmentService.java</code> 中的选课顺序如下，属于等价控制流摘录；省略了幂等键格式、学生状态和其他选课规则的检查。</p>
+<pre><code>var student = students.lockById(actor.personId()).orElseThrow(ApiFailure::notFound);
+var previous = requests.findByStudentIdAndRequestKey(student.getId(), key);
+if (previous.isPresent()) {
+    var saved = previous.get();
+    if (saved.getClassId() != classId)
+        throw new BusinessConflict(&quot;IDEMPOTENCY_CONFLICT&quot;, &quot;同一幂等键不能用于其他教学班&quot;);
+    return decode(saved.getResponseJson());
+}
+var target = classes.lockById(classId).orElseThrow(ApiFailure::notFound);
+var now = clock.instant();
+target.ensureSelectionWindow(now);
+// 完整规则通过后，Enrollment.create(student, target, now)、人数与请求快照同事务提交</code></pre>
+<p>服务在取得锁后取时间，避免把排队等待前的时间用作新操作的窗口依据。旧键先回放原成功快照，所以原操作在窗口内成功后，即使重试到达时已经截止，也不会被当作一次新的选课。</p>
+<p>退课同样先锁学生、再锁教学班，再调用 <code>enrollment.withdraw(clock.instant())</code>。<code>domain/Enrollment.java</code> 先对已经WITHDRAWN的记录直接返回，再拒绝已评分记录，随后执行 <code>teachingClass.ensureSelectionWindow(now)</code>、释放名额并记录退课时间。这样，有效选课仍受时间窗约束，重复退课可以保持204。</p>
+<p><code>Enrollment.enrolledAt</code>、<code>Enrollment.withdrawnAt</code> 和 <code>EnrollmentRequest.createdAt</code> 也改为Instant，使用注入Clock给出的时间。V5迁移中的窗口列仍为MySQL <code>DATETIME(6)</code>，工程明确约定存UTC，并以 <code>CHECK (open_at &lt; close_at)</code> 保护窗口定义；Hibernate继续使用UTC配置。</p>
+<h3>回归结果与证据</h3>
+<p>回归方法为 CourseSelectionIntegrationTest.selectionWindowIsLeftClosedRightOpenAndOldKeysReplayAfterDeadline。它运行真实HTTP和MySQL，以测试专用的 <code>@Primary MutableClock</code> 控制时刻；生产包没有改时间的HTTP入口。</p>
+<table><tr><th>固定UTC时刻或操作</th><th>实际验证的边界</th></tr><tr><td>09:59:59.999999，开放前</td><td>新选课与有效选课退课均为409，<code>WINDOW_NOT_OPEN</code></td></tr><tr><td>10:00:00，开放时</td><td>选课200，退课204</td></tr><tr><td>11:59:59.999999，截止前</td><td>选课200，退课204</td></tr><tr><td>12:00:00，截止时</td><td>新选课与有效选课退课均为409，<code>WINDOW_CLOSED</code></td></tr><tr><td>截止后重放窗口内已成功的同键请求</td><td>返回原快照，不新增选课；有效记录数和班级人数仍各为1</td></tr><tr><td>SQL写入窗口10:00，JPA重新加载</td><td>精确等于 <code>Instant.parse(&quot;2026-10-31T10:00:00Z&quot;)</code></td></tr><tr><td>开放时选课与退课后的独立SQL查询</td><td><code>DATE_FORMAT(enrolled_at,...)</code>、<code>DATE_FORMAT(withdrawn_at,...)</code> 均为UTC <code>2026-10-31T10:00:00.000000</code></td></tr></table>
+<p>以下是已经执行并保留的记录，本次补文档没有重新运行测试：</p>
+<table><tr><th>证据</th><th>结果与用途</th></tr><tr><td>09-window-timezone-diagnosis.log</td><td>单用例1次断言失败，保留10:00读成18:00的原始错误</td></tr><tr><td>10-mysql-final-green.log</td><td>改用Instant后，19项全部通过，失败/错误均0</td></tr><tr><td>11-final-package.log</td><td>加上审计列UTC精确值断言后，19项全部通过并打包成功</td></tr><tr><td>green原始JUnit XML</td><td>保留最终方法名、耗时及0失败/0错误结果</td></tr><tr><td>干净目录构建日志、新空库启动日志</td><td>同主机新目录重建19项通过；新空库course_repro成功执行V1—V5，核对迁移与构建可复现</td></tr></table>
+<h3>收益与代价</h3>
+<p>修复使窗口比较和审计字段使用同一种绝对时间语义，消除了本次实测的8小时偏移；固定Clock让开放与截止边界可以精确重现，无需等待真实时间。数据库原始值、实体加载值、HTTP结果和最终人数都有对应断言，能够发现仅检查页面提示时遗漏的问题。</p>
+<p>代价是工程必须持续遵守UTC存储约定，展示本地时间时显式选择时区；手工SQL和导入数据也需先明确原始时区。<code>DATETIME(6)</code> 的精度为微秒，边界测试据此选择六位小数。若接入已有本地时间数据，应先核对并转换其时区，不能只更改Java字段类型。这些约定需要与V5迁移、Clock配置和上述回归用例一起维护。</p><h2>重构记录 B 当前关系与操作结果</h2>
+<p>&gt; 历史证据位置：本文件记载的evidence路径指原始测试记录.zip内部的相对路径，统一见配套资源包的04_测试与验收。重新执行自检时，当前结果写入工程根目录evidence。</p>
+<p>旧依据：本轮修订前第十章代码10-3确实按当前关系判断并重新activate原行；原稿备份保存在教材工作目录的execution-20261031/backup。需求R02/R03，约束C03/C04/C06。</p>
+<p>修改前：</p>
+<pre><code>Selection record = old == null ? new Selection(student, target) : old;
+record.activate(clock.instant());</code></pre>
+<p>修改后：</p>
+<pre><code>var previous = requests.findByStudentIdAndRequestKey(student.getId(), key);
+if (previous.isPresent()) {
+    var saved = previous.get();
+    if (saved.getClassId() != classId) throw new BusinessConflict(&quot;IDEMPOTENCY_CONFLICT&quot;, &quot;同一键不能换目标&quot;);
+    return decode(saved.getResponseJson());
+}
+// 新意图通过规则后新建Enrollment；保存与业务同事务的快照
+var row = enrollments.saveAndFlush(Enrollment.create(student, target, now));
+return remember(student.getId(), key, classId, EnrollmentResult.from(row));</code></pre>
+<p>数据库：V1生成列仅限制一条ACTIVE，WITHDRAWN历史可多行；enrollment_request按student_id/request_key唯一。</p>
+<p>回归证据：replaysRequestWithoutResurrectingWithdrawnEnrollment先选退，旧键响应逐字相同且有效数仍0，新键得到不同id；concurrentSameIdempotencyKeyReturnsOneCommittedResult两响应相同且记录/请求表各1；databaseFailureRollsBackEnrollmentSeatAndIdempotencyRecord三项回滚。源骨架未实现时的红灯和最终green均保留，没有捏造旧代码运行结果。</p>
+<p>收益：历史可审计，旧请求不误变成新选课。代价：快照存储、客户端原键管理、历史清理策略；界面必须提示快照需以当前课表确认。详见ADR 002。</p>
+<h2>本次实际前端缺陷与修复</h2>
+<p>关联需求：R02 选课、R03 退课、C04 请求幂等。本节记录的是本轮前端开发中实际出现、由回归测试复现并修复的问题。旧片段来自修复前的 <code>frontend/src/store.js</code>，不是为说明问题而虚构的反例；以下只省略同一函数中无关的状态设置与异常分支。</p>
+<p>真实触发条件：第一次选课已在服务端提交，但客户端没有收到响应；该选课随后被退掉。客户端沿用原幂等键重试时，后端正确回放第一次成功的 ACTIVE 响应快照，当前 <code>GET /api/enrollments/me</code> 却已无此教学班。快照证明原请求曾成功，不能证明当前仍处于已选状态。</p>
+<p>修复前，<code>sendEnrollment()</code> 的实际成功分支为：</p>
+<pre><code>await api.enroll(target.teachingClassId, target.key);
+if (startEpoch !== epoch) return;
+confirmEnrollmentSuccess(&#x27;选课成功。&#x27;, username);
+await Promise.all([loadClasses(), loadMyEnrollments()]);</code></pre>
+<p>这里确实已经刷新个人记录，但没有使用 GET 的返回值修正提示。因此即使刷新后的有效记录为空，“选课成功。”仍保留在页面上；后端没有复活历史，前端却把历史成功误报成当前成功。</p>
+<p>修复后，在提交前固定 <code>const submittedKey = target.key</code>，成功分支的实际片段为：</p>
+<pre><code>await api.enroll(target.teachingClassId, target.key);
+if (startEpoch !== epoch) return;
+confirmEnrollmentSuccess(&#x27;选课请求已处理，正在查询当前记录。&#x27;, username);
+const [, rows] = await Promise.all([loadClasses(), loadMyEnrollments()]);
+if (startEpoch !== epoch || target.key !== submittedKey) return;
+// An idempotency replay is the original success snapshot, not current enrollment state.
+target.message = rows == null ? &#x27;选课请求已处理，请刷新个人记录查看当前状态。&#x27;
+  : rows.some((row) =&gt; row.teachingClassId === target.teachingClassId &amp;&amp; active(row)) ? &#x27;选课成功。&#x27;
+  : &#x27;选课请求已处理，但当前有效记录中未包含此教学班；请核对当前选课。&#x27;;</code></pre>
+<p><code>active(row)</code> 在实际实现中判断 <code>row.status === &#x27;ACTIVE&#x27;</code>。<code>confirmed</code> 表示提交请求已有明确处理结果；当前是否已选由随后读取的有效记录决定。GET 失败时不把它当成提交失败，不新建幂等键，也不自动发送新的 POST；登录代次与原请求号检查防止迟到的查询覆盖后续操作。</p>
+<p>回归用例为 <code>frontend/tests/store.test.js</code> 中的“旧键回放历史成功但当前已退课时，页面不宣称当前选课成功”。测试注入返回 <code>{id:7,teachingClassId:1,status:&#x27;ACTIVE&#x27;,score:null}</code> 的选课 API，以及返回空数组的个人记录 API，复现“历史成功快照与当前状态不同”的控制流；这是一项前端状态回归测试，不把它冒充成浏览器跨标签页实测。断言提交状态仍为 <code>confirmed</code>，提示包含“当前有效记录中未包含”，且不包含“选课成功”。</p>
+<table><tr><th>阶段</th><th>实际结果</th><th>工程根目录下的完整证据路径</th></tr><tr><td>修复前先补回归用例</td><td>仅运行 store 测试：19 项，18 通过、1 失败。该用例实际得到“选课成功。”，未匹配 <code>/当前有效记录中未包含/</code>。</td><td><code>frontend/evidence/replay-snapshot-message-red.log</code></td></tr><tr><td>修复后运行全部前端测试</td><td>Node 22.14.0 下 <code>npm test</code>：32 项，32 通过、0 失败；包括上述用例、原键重试、查询确认失败和重复点击保护。</td><td><code>frontend/evidence/npm-test.log</code>；<code>frontend/evidence/versions.log</code></td></tr><tr><td>构建与范围记录</td><td><code>npm run build</code> 成功；验证报告区分前端可控 API 测试与真实后端/浏览器验收。</td><td><code>frontend/evidence/npm-build.log</code>；<code>frontend/evidence/VERIFICATION.md</code>；<code>frontend/evidence/BACKEND-CONTRACT-REVIEW.md</code></td></tr></table>
+<p>收益：R02 的成功提示与当前有效选课一致，R03 的退课结果不会被旧快照在界面上掩盖，C04 的原键回放仍保持原有语义。代价：前端必须区分“请求已处理”与“当前已选”，最终提示要等待已有 GET 查询完成，并处理查询失败、登录切换和请求切换；没有增加成功路径的 HTTP 查询次数，因为旧实现本来就执行该 GET。后端历史快照和当前课表接口均无需为此修改。</p><h2>需求、约束、实现与证据追踪</h2>
+<p>&gt; 历史证据位置：本文件记载的evidence路径指原始测试记录.zip内部的相对路径，统一见配套资源包的04_测试与验收。重新执行自检时，当前结果写入工程根目录evidence。</p>
+<p>R01—R06只表示功能；C01—C06表示横向约束。</p>
+<table><tr><th>编号</th><th>实现</th><th>对应验证及证据</th></tr><tr><td>R01 教学班查询</td><td>EnrollmentService.classes、CourseSelectionController、App.vue</td><td>authenticatesSeededIdentityAndQueriesClassesOnMysql；学生/教师页面截图</td></tr><tr><td>R02 选课</td><td>EnrollmentService.enroll、仓储锁、Enrollment.create</td><td>selectsQueriesTimetableAndWithdrawsWithHistory、容量/冲突并发及HTTP记录</td></tr><tr><td>R03 退课</td><td>EnrollmentService.withdraw、Enrollment.withdraw</td><td>正常/重复退课、他人拒绝、历史保留、旧键重放</td></tr><tr><td>R04 个人课表</td><td>timetable、findActiveByStudent、store.js</td><td>仅认证本人ACTIVE；退课后消失；页面截图</td></tr><tr><td>R05 教师名单</td><td>roster、ensureTeacher</td><td>本人班成功、学生与非任课教师403</td></tr><tr><td>R06 成绩录入</td><td>recordScore、ensureClosedForGrades</td><td>0/100/85、null/负数/超100/小数位、OPEN拒绝、重复PUT、退课并发</td></tr><tr><td>C01 容量及计数</td><td>学生后教学班锁、同事务记录与计数</td><td>concurrentStudentsCompeteForOneSeatWithoutOverbooking；独立SQL</td></tr><tr><td>C02 课程/时间/学分</td><td>同学生锁、同学期ACTIVE、BigDecimal、MeetingSlot</td><td>冲突并发、重复课程、恰好上限及超限</td></tr><tr><td>C03 有效唯一与历史</td><td>V1生成列唯一键、WITHDRAWN历史</td><td>databaseUniqueConstraintAllowsHistoryButRejectsTwoActiveRelations</td></tr><tr><td>C04 请求幂等</td><td>enrollment_request快照、键目标校验</td><td>同键并发、退后旧键重放、换键重选、异目标409</td></tr><tr><td>C05 身份及归属</td><td>Actor、服务角色与所有权</td><td>requiresAuthenticationAndEnforcesRoles、checksStudentAndTeacherOwnershipAndScoreBoundaries</td></tr><tr><td>C06 原子性及边界</td><td>@Transactional、Clock、V5 UTC窗口</td><td>databaseFailureRollsBackEnrollmentSeatAndIdempotencyRecord、窗口四边界及审计UTC</td></tr></table>
+<p>原始JUnit报告：<code>backend/evidence/green/</code>；前端状态测试：<code>frontend/evidence/npm-test.log</code>；交付后完整复建：<code>evidence/pipeline-*.log</code>。最终方法名与数量可直接读取JUnit XML，未实现扩展不得填为通过。</p><p><a href="../../../04_测试与验收/原始记录索引.html">定位原始记录</a></p></main></html>

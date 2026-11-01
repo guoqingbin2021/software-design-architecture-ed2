@@ -1,0 +1,6 @@
+# Deliberately independent from DB_URL, which may point at the demonstration database.
+spring:
+  datasource:
+    url: ${TEST_DB_URL:jdbc:mysql://127.0.0.1:13316/course_test?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
+    username: ${TEST_DB_USER:course_app}
+    password: ${TEST_DB_PASSWORD:Chapter10Db!}

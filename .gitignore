@@ -1,0 +1,12 @@
+**/.env
+**/.env.local
+**/.env.*.local
+**/node_modules/
+**/target/
+**/dist/
+**/.tools/
+**/*.pid
+**/__pycache__/
+**/.DS_Store
+**/Thumbs.db
+02_配套工程/course-selection/evidence/
