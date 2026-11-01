@@ -2,9 +2,13 @@
 
 本仓库提供教材第十章学生选课系统的完整工程、实践指导、设计案例、教材图件和测试验收资料。
 
-**[下载配套资源 ZIP](https://github.com/guoqingbin2021/software-design-architecture-ed2/releases/download/chapter10-v1.0.0/software-design-architecture-ed2-resources-v1.0.0.zip)** · **[固定版本与校验文件](https://github.com/guoqingbin2021/software-design-architecture-ed2/releases/tag/chapter10-v1.0.0)**
+**[下载配套资源 ZIP](https://github.com/guoqingbin2021/software-design-architecture-ed2/archive/refs/tags/chapter10-v1.0.1.zip)** · **[固定标签页与逐文件校验](https://github.com/guoqingbin2021/software-design-architecture-ed2/tree/chapter10-v1.0.1)**
 
 完整解压后双击 `00_总览.html`，即可离线查阅全部配套资料。GitHub文件页会显示HTML源码；本地浏览器可直接阅读。仓库沿用本地交付资料的目录编号，书稿目录不在公开范围。
+
+资源二维码（指向固定版本页）：[查看PNG](05_使用与版本/资源下载二维码.png)
+
+![资源下载二维码](05_使用与版本/资源下载二维码.png)
 
 ## 资源导航
 
@@ -29,9 +33,9 @@
 
 ## 版本和验证记录
 
-- 教材对应源码版本：`chapter10-v1.0.0`。本标签固定保留；后续修改另建版本。
+- 工程代码基线：`chapter10-v1.0.0`；资料修订版：`chapter10-v1.0.1`。本次补齐资源链接与二维码，原有标签和发布物继续保留。
 - 2026年10月31日完成19项真实HTTP/MySQL集成测试、32项前端测试、六功能浏览器验证、前后端构建及新目录空库复建。
 - 本次GitHub发布只调整公开资料与阅读入口。业务源码、测试、依赖配置及运行脚本与已验证版本逐文件一致，未重新执行上述业务测试。
 - 原始日志、JUnit报告、页面截图与SQL结果集中于 `04_测试与验收/原始测试记录.zip`，保留原始路径。运行自检时会生成自己的实验记录。
 
-本仓库只公开工程和配套资料，教材整书及第十章书稿留在编者本地。课堂记录与签字由实际执行者填写。Release附件配有SHA-256；仓库文件清单见 [SHA256SUMS.txt](SHA256SUMS.txt)。
+本仓库只公开工程和配套资料，教材整书及第十章书稿留在编者本地。课堂记录与签字由实际执行者填写。解压后按根目录的 [SHA256SUMS.txt](SHA256SUMS.txt) 逐文件核验。GitHub标签归档与本地公开资源ZIP的文件内容相同，压缩格式和外层目录名可能不同。

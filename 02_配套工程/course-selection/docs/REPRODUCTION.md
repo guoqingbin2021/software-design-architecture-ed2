@@ -2,7 +2,11 @@
 
 > 历史证据位置：本文件记载的evidence路径指原始测试记录.zip内部的相对路径，统一见配套资源包的04_测试与验收。重新执行自检时，当前结果写入工程根目录evidence。
 
-固定版本 `chapter10-v1.0.0`。工程下载地址：
+工程代码基线 `chapter10-v1.0.0`，资料修订版 `chapter10-v1.0.1`。
+
+工程下载地址：https://github.com/guoqingbin2021/software-design-architecture-ed2/archive/refs/tags/chapter10-v1.0.1.zip
+
+固定版本页：https://github.com/guoqingbin2021/software-design-architecture-ed2/tree/chapter10-v1.0.1
 
 ## 准备与执行
 

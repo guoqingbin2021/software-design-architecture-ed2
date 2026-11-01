@@ -46,6 +46,6 @@ npm run preview
 
 测试不模拟浏览器布局；与真实后端的浏览器验收证据由工程总报告提供。接口字段见 [API-CONTRACT.md](./API-CONTRACT.md)。
 
-公开下载地址：
+公开下载地址：https://github.com/guoqingbin2021/software-design-architecture-ed2/archive/refs/tags/chapter10-v1.0.1.zip
 
-二维码地址：
+资源二维码（指向固定版本页）：[查看PNG](../docs/resources-download-qr.png)

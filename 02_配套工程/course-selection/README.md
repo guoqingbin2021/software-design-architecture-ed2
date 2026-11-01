@@ -2,13 +2,15 @@
 
 > 历史证据位置：本文件记载的evidence路径指原始测试记录.zip内部的相对路径，统一见配套资源包的04_测试与验收。重新执行自检时，当前结果写入工程根目录evidence。
 
-固定版本：`chapter10-v1.0.0`。这是已构建、已在真实 MySQL 上验证的六功能教学基本版。下方列出固定版本资源与源码地址，二维码位置由编者按需填写。
+工程代码基线：`chapter10-v1.0.0`；资料修订版：`chapter10-v1.0.1`。这是已构建、已在真实 MySQL 上验证的六功能教学基本版。下方提供固定版本下载、源码仓库与资源二维码。
 
-工程下载地址：https://github.com/guoqingbin2021/software-design-architecture-ed2/releases/download/chapter10-v1.0.0/software-design-architecture-ed2-resources-v1.0.0.zip
+工程下载地址：[下载固定版本ZIP](https://github.com/guoqingbin2021/software-design-architecture-ed2/archive/refs/tags/chapter10-v1.0.1.zip)
 
 源码仓库地址：https://github.com/guoqingbin2021/software-design-architecture-ed2
 
-二维码地址：
+资源二维码（指向固定版本页）：[查看PNG](docs/resources-download-qr.png)
+
+![资源下载二维码](docs/resources-download-qr.png)
 
 ## 实现范围
 
@@ -82,4 +84,4 @@ R01 教学班查询；R02 选课；R03 退课；R04 本人有效课表；R05 教
 [配套资源总览](../../00_总览.html) · [实验指导与记录](../../03_实践指导/实验指导与记录.docx) · [教学组织与评价参考](../../03_实践指导/教学组织与评价参考.docx) · [原始记录索引](../../04_测试与验收/原始记录索引.html)
 
 
-固定版本发布页：https://github.com/guoqingbin2021/software-design-architecture-ed2/releases/tag/chapter10-v1.0.0
+固定版本页：[chapter10-v1.0.1](https://github.com/guoqingbin2021/software-design-architecture-ed2/tree/chapter10-v1.0.1)
