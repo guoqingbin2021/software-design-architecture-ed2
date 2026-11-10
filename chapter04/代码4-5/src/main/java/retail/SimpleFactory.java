@@ -1,0 +1,24 @@
+package retail;
+
+public final class SimpleFactory {
+    private SimpleFactory() {}
+
+    public static Payment payment(String channel) {
+        if (channel == null) throw new IllegalArgumentException("Missing channel");
+        return switch (channel) {
+            case "ALI" -> new AliPayGateway();
+            case "WECHAT" -> new WeChatPay();
+            case "UNION" -> new UnionPay();
+            default -> throw new IllegalArgumentException("Unknown channel: " + channel);
+        };
+    }
+
+    public static Printer printer(String model) {
+        if (model == null) throw new IllegalArgumentException("Missing printer model");
+        return switch (model) {
+            case "SNBC" -> new SNBCPrinter();
+            case "SISS" -> new SissPrinter();
+            default -> throw new IllegalArgumentException("Unknown printer model: " + model);
+        };
+    }
+}

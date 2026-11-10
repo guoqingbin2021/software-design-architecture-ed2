@@ -1,0 +1,12 @@
+# 例10-1：恢复初始教学数据并启动后端后执行。
+# 统一教学密码为Chapter10!；下方Basic值对应student1。
+POST http://127.0.0.1:18080/api/enrollments HTTP/1.1
+Authorization: Basic c3R1ZGVudDE6Q2hhcHRlcjEwIQ==
+Content-Type: application/json
+Idempotency-Key: example-enroll-001
+
+{"teachingClassId":1}
+
+### 查询张敏当前的有效课表
+GET http://127.0.0.1:18080/api/enrollments/me HTTP/1.1
+Authorization: Basic c3R1ZGVudDE6Q2hhcHRlcjEwIQ==

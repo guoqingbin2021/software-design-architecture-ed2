@@ -1,0 +1,23 @@
+<project
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>textbook.chapter4</groupId>
+    <artifactId>chapter-4-examples</artifactId>
+    <version>1.0.0</version>
+  </parent>
+  <artifactId>example-4-5</artifactId>
+  <properties>
+    <example.mainClass>retail.RetailApp</example.mainClass>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+      <version>6.2.19</version>
+    </dependency>
+  </dependencies>
+</project>

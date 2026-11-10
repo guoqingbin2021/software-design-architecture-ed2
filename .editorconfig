@@ -1,0 +1,29 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = true
+insert_final_newline = true
+max_line_length = 100
+
+[*.{java,sql,ps1}]
+indent_size = 4
+
+[*.ps1]
+charset = utf-8-bom
+
+[*.bat]
+end_of_line = crlf
+
+[*.csv]
+trim_trailing_whitespace = false
+
+# Versioned database migrations retain their existing layout and Flyway checksums.
+[**/db/migration/*.sql]
+indent_size = 2
+end_of_line = unset
+trim_trailing_whitespace = false
+insert_final_newline = unset

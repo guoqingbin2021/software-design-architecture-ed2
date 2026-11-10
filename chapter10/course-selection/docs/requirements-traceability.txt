@@ -1,0 +1,32 @@
+第十章需求与测试追踪表
+
+R01—R06对应正文表10.1的六项功能，C01—C06对应表10.3的业务约束。
+后端方法位于 EnrollmentService.java；下表中的后端测试均位于
+backend/src/test/java/edu/textbook/selection/CourseSelectionIntegrationTest.java。
+
+| 编号 | 实现位置 | 主要测试方法 |
+|---|---|---|
+| R01 教学班查询 | classes，控制器的教学班查询接口 | authenticatesSeededIdentityAndQueriesClassesOnMysql |
+| R02 学生选课 | enroll、Enrollment.create、TeachingClass.reserveSeat | selectsQueriesTimetableAndWithdrawsWithHistory；concurrentStudentsCompeteForOneSeatWithoutOverbooking |
+| R03 学生退课 | withdraw、Enrollment.withdraw | selectsQueriesTimetableAndWithdrawsWithHistory；closedClassBlocksWithdrawalAndWithdrawnEnrollmentCannotBeScored |
+| R04 个人课表 | timetable、EnrollmentRepository.findActiveByStudent | selectsQueriesTimetableAndWithdrawsWithHistory；前端 presenters.test.js 的有效课表筛选与排序测试 |
+| R05 本班学生名单 | roster、ensureTeacher、EnrollmentRepository.findRoster | checksStudentAndTeacherOwnershipAndScoreBoundaries |
+| R06 成绩录入 | recordScore、ensureClosedForGrades、Enrollment.recordScore | checksStudentAndTeacherOwnershipAndScoreBoundaries；repeatedGradePutIsIdempotentAndWithdrawalCannotRaceAClosedClassGrade |
+| C01 人数不超容量，且等于有效记录数 | 学生锁与教学班锁；reserveSeat；V1容量检查约束；同事务保存 | concurrentStudentsCompeteForOneSeatWithoutOverbooking；databaseFailureRollsBackEnrollmentSeatAndIdempotencyRecord |
+| C02 同学期无重复课程、时间冲突和超学分 | enroll中的同学期有效选课检查；MeetingSlot.overlaps；BigDecimal学分计算 | rejectsClosedFullConflictingDuplicateCourseAndCreditLimit；concurrentSameStudentConflictingClassesAreSerialized；creditLimitAllowsExactUpperBoundaryAndRejectsNextCourse |
+| C03 同一学生与教学班至多一条有效关系 | V1的active_class_id生成列与联合唯一键；退课保留历史行 | databaseUniqueConstraintAllowsHistoryButRejectsTwoActiveRelations |
+| C04 同一成功请求重试不再次占座 | remember、EnrollmentRequest、学生与请求键联合唯一键 | concurrentSameIdempotencyKeyReturnsOneCommittedResult；replaysRequestWithoutResurrectingWithdrawnEnrollment；duplicateActiveSelectionWithNewKeyDoesNotConsumeAnotherSeat |
+| C05 身份、记录归属和任课关系正确 | Actor、SecurityConfig、withdraw、ensureTeacher | requiresAuthenticationAndEnforcesRoles；checksStudentAndTeacherOwnershipAndScoreBoundaries；validatesInputAndDoesNotTrustSelfReportedIdentity |
+| C06 成绩合法，失败操作整体回滚 | ScoreRequest、Enrollment.recordScore、选课服务的事务边界 | checksStudentAndTeacherOwnershipAndScoreBoundaries；databaseFailureRollsBackEnrollmentSeatAndIdempotencyRecord |
+
+选退课窗口另由 selectionWindowIsLeftClosedRightOpenAndOldKeysReplayAfterDeadline
+检查开放与截止边界。前端的 api.test.js、store.test.js 和
+presenters.test.js 检查请求协议、结果未知时的处理、响应乱序、身份切换及页面规则。
+
+在工程根目录执行 pwsh -File scripts/verify.ps1 后，后端JUnit报告写入
+backend/target/surefire-reports/，前后端构建和测试日志写入
+evidence/pipeline-*.log，总体结果写入 evidence/pipeline-result.txt。
+操作后的独立SQL检查使用 scripts/verify-invariants.sql，每条查询应返回零条违规记录。
+原请求快照查询由queriesOriginalRequestSnapshotWithinCurrentStudentScope验证；
+安全整数输入由rejectsUnsafeStringAndFractionalPublicIdentifiers验证。当前结果见README.txt，
+重新执行后以本机JUnit报告为准。

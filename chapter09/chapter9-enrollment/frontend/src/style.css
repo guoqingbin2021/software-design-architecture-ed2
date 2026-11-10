@@ -1,0 +1,268 @@
+:root {
+  font-family: 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
+  color: #253b45;
+  background: #fff;
+  font-synthesis: none;
+  line-height: 1.6;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+input {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+  border: 1px solid #b7c9d0;
+  border-radius: 6px;
+  padding: 0.55rem 1rem;
+  background: white;
+  color: #254b60;
+}
+button:hover:enabled {
+  background: #eef4f7;
+}
+button:disabled {
+  cursor: not-allowed;
+  color: #63747b;
+  background: #eff2f3;
+  border-color: #d7dfe2;
+}
+button.primary {
+  background: #315e73;
+  border-color: #315e73;
+  color: #fff;
+}
+button.primary:hover:enabled {
+  background: #244b5d;
+}
+button.primary:disabled {
+  background: #dae2e6;
+  color: #52636a;
+  border-color: #dae2e6;
+}
+button.danger {
+  color: #845526;
+  border-color: #b98c5b;
+}
+button:focus-visible,
+input:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #5296ba;
+  outline-offset: 3px;
+}
+.shell {
+  max-width: 1120px;
+  padding: 38px 28px 20px;
+  margin: auto;
+}
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+.eyebrow {
+  font-size: 0.85rem;
+  color: #506e7a;
+  margin: 0 0 10px;
+  letter-spacing: 0.08em;
+}
+h1 {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  line-height: 1.35;
+  margin: 0;
+  font-weight: 650;
+}
+h2 {
+  font-size: 1.15rem;
+  margin: 0;
+  font-weight: 650;
+}
+h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+p {
+  margin: 0.7rem 0;
+}
+.subtitle,
+.muted {
+  color: #60757e;
+}
+.account {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  padding-top: 12px;
+}
+.panel {
+  border: 1px solid #d9e2e6;
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 12px;
+}
+.badge {
+  font-size: 0.8rem;
+  padding: 2px 9px;
+  background: #eff5f7;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.form-row {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0;
+}
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.9rem;
+}
+input {
+  border: 1px solid #b7c9d0;
+  border-radius: 5px;
+  padding: 0.55rem 0.7rem;
+  width: 210px;
+  background: #fff;
+  color: inherit;
+}
+input:disabled,
+input[readonly] {
+  background: #f1f4f5;
+}
+.table-scroll {
+  overflow-x: auto;
+  margin-top: 20px;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.9rem;
+  text-align: left;
+}
+th {
+  background: #f3f7f8;
+  font-weight: 600;
+}
+th,
+td {
+  padding: 13px 10px;
+  border-bottom: 1px solid #dce5e9;
+  vertical-align: top;
+}
+.cell-detail {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.77rem;
+  color: #60757e;
+}
+.empty {
+  padding: 22px 0;
+  color: #60757e;
+}
+.notice,
+.confirmation {
+  padding: 18px;
+  margin-top: 18px;
+  background: #faf6f0;
+  border-left: 3px solid #b48a56;
+  border-radius: 3px;
+}
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.error {
+  color: #a23e31;
+}
+.error p {
+  margin-top: 0;
+}
+.page-message {
+  border: 1px solid #c7d9d3;
+  background: #f1f7f5;
+  padding: 16px 20px;
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+details {
+  margin-top: 15px;
+  font-size: 0.85rem;
+}
+summary {
+  cursor: pointer;
+}
+dl {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 5px 10px;
+  font-size: 0.85rem;
+}
+dt {
+  color: #60757e;
+}
+dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+footer {
+  font-size: 0.8rem;
+  color: #60757e;
+  padding: 12px 0;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 650px) {
+  .shell {
+    padding: 24px 16px;
+  }
+  .page-header {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .panel {
+    padding: 18px;
+  }
+  .form-row {
+    align-items: stretch;
+  }
+  label,
+  input {
+    width: 100%;
+  }
+  .form-row button {
+    width: 100%;
+  }
+  dl {
+    grid-template-columns: 1fr;
+  }
+  dd {
+    margin-bottom: 8px;
+  }
+}

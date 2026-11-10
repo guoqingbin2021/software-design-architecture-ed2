@@ -1,41 +1,48 @@
-# 软件设计与体系结构 第二版配套资源
+# 软件设计与体系结构 配套代码
 
-本仓库提供教材第十章学生选课系统的完整工程、实践指导、设计案例、教材图件和测试验收资料。
+本仓库提供《软件设计与体系结构》教材第1至10章的配套代码、实验数据和习题代码参考答案。第一至七章围绕零售业务学习职责分配、设计原则、设计模式与架构选择，第八至十章逐步完成学生选课系统。
 
-**[下载配套资源 ZIP](https://github.com/guoqingbin2021/software-design-architecture-ed2/archive/refs/tags/chapter10-v1.0.1.zip)** · **[固定标签页与逐文件校验](https://github.com/guoqingbin2021/software-design-architecture-ed2/tree/chapter10-v1.0.1)**
+## 下载与使用
 
-完整解压后双击 `00_总览.html`，即可离线查阅全部配套资料。GitHub文件页会显示HTML源码；本地浏览器可直接阅读。仓库沿用本地交付资料的目录编号，书稿目录不在公开范围。
+在仓库主页选择 **Code → Download ZIP**，解压后按章节进入相应目录。也可以使用 Git：
 
-资源二维码（指向固定版本页）：[查看PNG](05_使用与版本/资源下载二维码.png)
+```sh
+git clone https://github.com/guoqingbin2021/software-design-architecture-ed2.git
+cd software-design-architecture-ed2
+```
 
-![资源下载二维码](05_使用与版本/资源下载二维码.png)
+每章的 `README.txt` 说明正文对应内容、运行环境、运行方法和验证方法；`answer_key/运行说明.txt` 说明习题代码答案的运行方式。设计题和文字题的参考答案见教材书末。
 
-## 资源导航
+## 章节目录
 
-| 内容 | 入口 |
-|---|---|
-| 工程安装、初始化和运行 | [工程README](02_配套工程/course-selection/README.md) |
-| 代码与测试位置 | [文件索引](02_配套工程/course-selection/docs/FILE-MAP.md) |
-| 接口路径、字段与错误响应 | [API契约](02_配套工程/course-selection/docs/API.md) |
-| 两份设计决策 | [ADR](02_配套工程/course-selection/docs/adr/) |
-| 两份重构记录与前后对照 | [重构案例](02_配套工程/course-selection/docs/refactoring/) |
-| 功能、约束与测试对应 | [需求追踪](02_配套工程/course-selection/docs/requirements-traceability.md) |
-| 9组PNG与可编辑drawio图件 | [图件](02_配套工程/course-selection/docs/figures/) |
-| 实验记录、教学组织与评价参考 | [实践指导](03_实践指导/) |
-| 验收报告及89份原始记录 | [测试与验收](04_测试与验收/) |
-| 使用方式、版本与校验 | [使用说明](05_使用与版本/使用说明.md) |
+| 目录 | 内容 | 使用入口 |
+| --- | --- | --- |
+| `chapter01` | 软件设计与体系结构概述 | 打印替换、金额计算与测试 |
+| `chapter02` | GRASP设计原则与职责分配 | 零售结算的职责与协作 |
+| `chapter03` | 面向对象设计原则 | 独立Java示例及固定输入验证 |
+| `chapter04` | 创建型设计模式 | 分模块Maven示例 |
+| `chapter05` | 结构型设计模式 | 分模块Maven示例 |
+| `chapter06` | 行为型设计模式 | Java示例与`run-all.ps1` |
+| `chapter07` | 软件体系结构风格与架构设计 | 架构方案评分数据及参考材料 |
+| `chapter08` | 领域模型与数据访问设计 | 正文代码片段与SQL验证材料 |
+| `chapter09` | 从选课请求到页面反馈 | `chapter9-enrollment/README.txt` |
+| `chapter10` | 完成可验收的选课系统 | `course-selection/README.txt` |
 
-## 运行工程
+第八章以代码片段为主；运行完整选课系统时，使用第九章或第十章的工程。各章示例和习题答案按各自说明独立运行，不应把不同模块中的同名类型合并编译。
 
-使用PowerShell 7、JDK 17、Maven 3.9、MySQL 8.0及Node.js 22。进入 `02_配套工程/course-selection`，按工程README准备专用开发库和测试库，再依次初始化、自检、启动。依赖首次安装需要网络。再次自检前先停止本目录的前后端服务。
+## 环境与运行
 
-工程实现教学班查询、选课、退课、个人课表、教师名单和成绩录入六项功能。固定账户与业务数据均为教学样例。候补、可靠通知、服务拆分属于教材选做内容，基本工程未实现。
+Java示例采用JDK 17。Maven工程使用Maven 3.9；第九、十章还需要MySQL 8.0（CHECK约束至少需要8.0.16）、Node.js 22或24，以及PowerShell 7。依赖版本以各工程的`pom.xml`、`package.json`和锁文件为准。
 
-## 版本和验证记录
+- 第一、二章在本章目录运行`mvn test`。
+- 第三章按本章说明编译后，以`--test`参数执行验证。
+- 第四、五章进入具体模块运行`mvn -q compile exec:java`。
+- 第六章运行`powershell -NoProfile -ExecutionPolicy Bypass -File ./run-all.ps1`。
+- 第九章按`chapter9-enrollment/README.txt`配置环境后，使用`scripts/start.ps1`和`scripts/test.ps1`。
+- 第十章按`course-selection/README.txt`配置开发库及专用测试库，再使用启动脚本与`scripts/verify.ps1`。
 
-- 工程代码基线：`chapter10-v1.0.0`；资料修订版：`chapter10-v1.0.1`。本次补齐资源链接与二维码，原有标签和发布物继续保留。
-- 2026年10月31日完成19项真实HTTP/MySQL集成测试、32项前端测试、六功能浏览器验证、前后端构建及新目录空库复建。
-- 本次GitHub发布只调整公开资料与阅读入口。业务源码、测试、依赖配置及运行脚本与已验证版本逐文件一致，未重新执行上述业务测试。
-- 原始日志、JUnit报告、页面截图与SQL结果集中于 `04_测试与验收/原始测试记录.zip`，保留原始路径。运行自检时会生成自己的实验记录。
+第九、十章的`.env.example`包含本机教学配置示例。复制为`.env`并按实际环境填写；测试和数据恢复脚本会重置业务数据，应使用相应说明指定的专用数据库。
 
-本仓库只公开工程和配套资料，教材整书及第十章书稿留在编者本地。课堂记录与签字由实际执行者填写。解压后按根目录的 [SHA256SUMS.txt](SHA256SUMS.txt) 逐文件核验。GitHub标签归档与本地公开资源ZIP的文件内容相同，压缩格式和外层目录名可能不同。
+## 文件核对
+
+`SHA256SUMS.txt`列出本版文件的SHA-256校验值，清单本身不计入。仓库中的文件对应2026年11月10日整理的教材配套代码。

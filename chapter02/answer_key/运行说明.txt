@@ -1,0 +1,7 @@
+第2章习题代码参考答案
+环境 JDK 17及更新版本，不需要第三方依赖。
+在本answer_key目录打开终端：
+  javac -encoding UTF-8 --release 17 -d out Chapter02Answers.java
+  java -cp out Chapter02Answers
+显式检查失败抛出AssertionError，不需要-ea。out为运行时生成目录，不属于交付源码。
+本程序与原配套工程分开编译。题号、条件及解释见全书书末参考答案。

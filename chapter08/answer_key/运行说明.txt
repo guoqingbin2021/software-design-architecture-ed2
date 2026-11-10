@@ -1,0 +1,12 @@
+第8章习题代码参考答案
+题8-8及8-10的Score检查：JDK 17，无第三方库。
+  javac -encoding UTF-8 --release 17 -d out Chapter08Answers.java
+  java -cp out Chapter08Answers
+题8-9 queries.sql是对应第八章表结构的只读查询，在相应独立教学库运行。
+题8-10 experiment.sql使用MySQL 8.0会话临时表，在同一连接执行整份文件：
+  mysql --host=127.0.0.1 --port=自己的教学实例端口 -u 自己的账户 -p --default-character-set=utf8mb4 独立教学库
+  source experiment.sql
+需有CREATE TEMPORARY TABLES权限。时间字符串以UTC存储，展示时按正文北京时间解释。
+分页预期1003/1002、1001、空，总数3；逐班统计501/30/3和502/1/0。
+初始超容量查询为空，人为构造异常后为502/0/1，恢复后为空。
+本实验验证查询与值对象，不把JPA片段当成可启动工程，也不声称验证了数据库并发。

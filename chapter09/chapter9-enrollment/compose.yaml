@@ -1,0 +1,38 @@
+name: chapter9-enrollment
+services:
+  mysql:
+    image: mysql:8.0.40
+    environment:
+      MYSQL_DATABASE: enrollment_ch9
+      MYSQL_USER: ch9
+      MYSQL_PASSWORD: ${DB_PASSWORD:-Chapter9Db!Demo}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-Chapter9Root!Demo}
+    ports:
+      - '127.0.0.1:${MYSQL_PORT:-3307}:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 5s
+      timeout: 5s
+      retries: 40
+    command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_0900_ai_ci']
+  backend:
+    build: ./backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/enrollment_ch9?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: ch9
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-Chapter9Db!Demo}
+    ports:
+      - '127.0.0.1:${BACKEND_PORT:-8080}:8080'
+    depends_on:
+      mysql:
+        condition: service_healthy
+  frontend:
+    build: ./frontend
+    ports:
+      - '127.0.0.1:${FRONTEND_PORT:-8081}:80'
+    depends_on:
+      - backend
+volumes:
+  mysql_data:

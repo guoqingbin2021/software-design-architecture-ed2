@@ -1,4 +1,2 @@
+# Preserve source bytes, including versioned migration checksums.
 * -text
-*.docx binary
-*.zip binary
-*.png binary
