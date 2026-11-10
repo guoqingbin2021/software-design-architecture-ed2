@@ -367,7 +367,8 @@ export function useEnrollmentPage(
       if (!(await loadClasses(semester.value)) || generation !== identityGeneration) return false;
       if (items.value.some((row) => row.id === target.id)) {
         withdrawState.value = 'confirming';
-        message.value = '该记录仍在有效课表中，可对同一记录再次确认退课。';
+        // 复用id无法区分轮次；本页暂停写入不能阻止其他页面重新激活。
+        message.value = '该记录仍在有效课表中。确认未在其他页面重新选课后，可再次确认退课。';
       } else {
         withdrawState.value = 'confirmed';
         pendingWithdrawal.value = null;

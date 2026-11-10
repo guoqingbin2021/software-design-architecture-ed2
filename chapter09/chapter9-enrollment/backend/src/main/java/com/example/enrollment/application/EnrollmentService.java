@@ -84,6 +84,8 @@ public class EnrollmentService implements EnrollmentUseCases {
         if (e.isDeleted()) throw BusinessException.notFound();
         classes.findForUpdate(e.getTeachingClass().getId())
                 .orElseThrow(BusinessException::notFound);
+        // 同一轮关系期间未重新激活时，重复退课不再改变状态。
+        // 若其他页面已经重新激活同一id，迟到旧DELETE仍会退掉新一轮关系。
         e.withdraw(clock.instant());
         enrollments.saveAndFlush(e);
     }

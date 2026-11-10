@@ -38,7 +38,8 @@ Authorization并用credentials:'omit'排除Cookie；退出清除内存凭据。
 三、公共契约
 GET /api/me：当前身份；POST /api/enrollments：200原选课结果；
 GET /api/enrollments/me：200本人固定学期的有效课表，无semester参数；
-DELETE /api/enrollments/{id}：204，重复同一已退课记录仍为204；
+DELETE /api/enrollments/{id}：204；同一轮关系期间未重新激活时，
+重复同一已退课记录仍为204且不再改变状态；
 GET /api/enrollment-requests/{key}：200原成功快照。404只表示当前尚未
 看到完成快照，原事务可能仍在处理，不代表明确失败。
 
@@ -59,6 +60,14 @@ DELETE响应丢失后保存原记录id。点击“查询并恢复退课操作”
 本人有效课表核对：原id消失则确认不再有效；仍在则重新确认同一DELETE；
 网络失败或401继续保留不确定状态。不能通过新选课请求试探退课结果。
 
+退课恢复的适用条件是同一轮关系期间未重新激活。本页面暂停写入不能
+阻止其他页面重新选课：先选课得到id、退课、用新键重新激活原id，再
+到达的旧DELETE仍会退掉新一轮关系。此处保留这一简化模型，不作跨轮次
+安全重试的保证。DomainTest及MySqlContract中的delayed测试固定复现
+这一限制；第十章每轮选课生成新id，旧DELETE只定位旧记录。
+正文代码9-9只示范响应解析，省略认证、timeout、expectedStatus和成功
+DTO校验；工程frontend/src/api/requestJson.js保留这些完整处理。
+
 五、测试与数据恢复
 scripts/test.ps1执行前端测试/构建及后端领域测试；加-Integration运行
 Docker MySQL集成测试。没有Docker时先建立专用空测试库，设置：
@@ -66,12 +75,12 @@ Docker MySQL集成测试。没有Docker时先建立专用空测试库，设置�
   CH9_TEST_DB_USER、CH9_TEST_DB_PASSWORD
 然后在backend执行：mvn -Dit.test=LocalMySqlIT verify
 集成测试会清空并重建业务数据，只能指向专用测试库，不能用开发或真实库。
-测试断言覆盖认证、输入、幂等、越权、并发容量、事务回滚与关系复用；
+测试断言覆盖认证、输入、幂等、越权、并发容量、事务回滚、关系复用
+及迟到旧DELETE会取消重新激活关系这一模型限制；
 前端包括丢失响应后恢复、身份切换与协议错误分支。
 
-本次修订已执行领域测试、隔离MySQL集成测试、36项前端测试及生产构建。
-JUnit报告由Maven生成，后续复核以本机实际输出为准。Docker容器启动流程
-未作为本轮验证结论，真实MySQL验证使用独立临时实例。
+JUnit报告由Maven生成。执行上述命令后，按实际报告记录通过数及失败项；
+领域测试不能代替HTTP安全链与真实MySQL事务验证。
 
 重新演示时先停止后端，再连接专用enrollment_ch9库，执行
 database/reset-fixture.sql。它删除操作和请求日志并恢复29条初始选课，

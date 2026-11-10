@@ -169,6 +169,32 @@ abstract class MySqlContract {
     }
 
     @Test
+    void delayedOldDeleteCancelsReactivatedIdAndDocumentsSimplifiedModelLimit() throws Exception {
+        Session owner = login("student101");
+        String oldId = result(enroll(owner, "round-one", CLASS_JSON)
+                .andExpect(status().isOk())).get("id").asText();
+        withdraw(owner, oldId).andExpect(status().isNoContent());
+        withdraw(owner, oldId).andExpect(status().isNoContent());
+        assertThat(active()).isEqualTo(29); // 同一轮未重新激活，重复DELETE不再释放名额。
+        JsonNode second = result(enroll(owner, "round-two", CLASS_JSON)
+                .andExpect(status().isOk()));
+        assertThat(second.get("id").asText()).isEqualTo(oldId);
+        assertThat(active()).isEqualTo(30);
+        // 模拟第一轮滞留的DELETE在第二轮激活后才到达：简化模型无法区分轮次。
+        withdraw(owner, oldId).andExpect(status().isNoContent());
+        assertThat(active()).isEqualTo(29);
+        assertThat(jdbc.queryForObject(
+                "select status from enrollment where id=?", String.class, Long.parseLong(oldId)))
+                .isEqualTo("WITHDRAWN");
+        mvc.perform(get("/api/enrollments/me").header(owner.header(), owner.token()))
+                .andExpect(status().isOk()).andExpect(content().json("[]"));
+        assertThat(logCount()).isEqualTo(2); // 两次选课快照保留，不能替代关系的轮次标识。
+        assertThat(jdbc.queryForObject(
+                "select count(*) from enrollment where student_id=101 and class_id=501", Long.class))
+                .isEqualTo(1);
+    }
+
+    @Test
     void ownershipAndUnauthenticatedWithdrawalHaveNoSideEffects() throws Exception {
         Session owner = login("student101"), other = login("student102");
         String id =

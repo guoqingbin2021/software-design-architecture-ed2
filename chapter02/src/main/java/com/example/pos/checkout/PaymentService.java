@@ -28,6 +28,8 @@ public class PaymentService {
         }
         CompletableFuture.supplyAsync(
                         () -> first ? gateway.charge(request) : gateway.query(request), executor)
+                // 非Async回调可能由完成线程执行，也可能在登记时已完成而由登记线程执行。
+                // 需要固定执行器时使用whenCompleteAsync；UI更新仍由UiExecutor调度。
                 .whenComplete(
                         (receipt, ex) -> {
                             synchronized (sale) {

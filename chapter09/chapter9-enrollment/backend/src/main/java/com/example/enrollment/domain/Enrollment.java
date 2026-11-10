@@ -50,6 +50,8 @@ public class Enrollment {
         return e;
     }
 
+    // 教学简化模型复用同一id；重新激活后，旧DELETE无法与新一轮退课区分。
+    // 第十章为每轮选课创建新记录，旧操作仍指向旧记录。
     public void activate(Instant now) {
         requireNotDeleted();
         status = EnrollmentStatus.ACTIVE;

@@ -21,7 +21,7 @@ class DomainTest {
     }
 
     @Test
-    void withdrawalIsRepeatableAndReactivationKeepsSameRelation() {
+    void withdrawalIsRepeatableWithinOneRoundAndReactivationKeepsSameRelation() {
         var c = new TeachingClass(501, course, "2026秋", 30);
         var t = Instant.parse("2026-01-01T00:00:00Z");
         Enrollment e = Enrollment.create(student, c, t);
@@ -34,6 +34,19 @@ class DomainTest {
         assertThat(e.isActive()).isTrue();
         assertThat(e.getStudent()).isSameAs(student);
         assertThat(e.getTeachingClass()).isSameAs(c);
+    }
+
+    @Test
+    void delayedWithdrawalCanCancelReactivatedRelationInSimplifiedModel() {
+        var c = new TeachingClass(501, course, "2026秋", 30);
+        var t = Instant.parse("2026-01-01T00:00:00Z");
+        Enrollment relation = Enrollment.create(student, c, t);
+        relation.withdraw(t.plusSeconds(1));
+        relation.activate(t.plusSeconds(2));
+        // 旧请求与新请求只能定位同一关系，没有独立的轮次标识。
+        relation.withdraw(t.plusSeconds(3));
+        assertThat(relation.getStatus()).isEqualTo(EnrollmentStatus.WITHDRAWN);
+        assertThat(relation.getUpdatedAt()).isEqualTo(t.plusSeconds(3));
     }
 
     @Test

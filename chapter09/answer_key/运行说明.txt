@@ -6,3 +6,8 @@
 没有模拟真实数据库事务、认证或HTTP服务器；原chapter9-enrollment工程保留这些实现。
 恢复函数只读原请求和当前课表，不生成新请求键，不自行发起POST或DELETE。
 CONFIRMED_READ_FAILED表示原写入已确认、当前课表读取未完成，应保留重新读取入口。
+
+退课恢复的适用前提为同一轮关系期间未重新激活。重新激活沿用原id，
+相同课表形状无法区分旧一轮与新一轮；函数只给出恢复选项，不能承诺
+迟到旧DELETE不影响新选课。工程MySqlContract的delayedOldDelete测试
+通过Spring HTTP安全链和真实MySQL验证该限制，第十章改以每轮新id隔离旧操作。

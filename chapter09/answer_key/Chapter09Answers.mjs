@@ -78,6 +78,8 @@ export async function recoverSelection(pending, queryOriginal, readTimetable) {
     return { status: 'CONFIRMED_READ_FAILED', snapshot, error };
   }
 }
+// 适用前提：同一轮关系期间未重新激活。相同id也可能是新一轮关系，
+// 仅靠课表无法辨认；真实限制由工程MySqlContract的迟到DELETE测试复现。
 export async function recoverWithdrawal(id, readTimetable) {
   if (!Number.isSafeInteger(id) || id <= 0) throw new TypeError('id');
   try {

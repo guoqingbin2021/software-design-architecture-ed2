@@ -125,6 +125,7 @@ public class EnrollmentService {
 
         // 人数、选课记录和请求快照在同一个事务中保存。
         target.reserveSeat();
+        // 每轮使用新id，不重新激活旧行；旧DELETE仍定位旧一轮，不能取消本轮。
         var enrollment = enrollments.saveAndFlush(Enrollment.create(student, target, now));
         // flush只发送SQL；事务提交后，控制器才能取得成功结果。
         return remember(student.getId(), key, classId, EnrollmentResult.from(enrollment));
@@ -139,6 +140,7 @@ public class EnrollmentService {
         classes.lockById(location.getClassId()).orElseThrow(ApiFailure::notFound);
         // 先查询定位编号，取得两把锁后再读取可变状态，避免读取旧实体。
         var enrollment = enrollments.findById(enrollmentId).orElseThrow(ApiFailure::notFound);
+        // 只处理传入的记录id，不能按教学班改查并取消后来新建的有效记录。
         enrollment.withdraw(clock.instant());
         enrollments.flush();
     }
