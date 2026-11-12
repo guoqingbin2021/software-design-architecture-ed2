@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   validateBody,
+  selectionInput,
+  validateSuccessDto,
   LatestQuery,
   recoverSelection,
   recoverWithdrawal,
@@ -33,6 +35,25 @@ function deferred() {
   });
   return { promise, resolve, reject };
 }
+test('9-8 身份只从可信Actor取得，额外客户端身份拒绝', () => {
+  const actor = Object.freeze({ role: 'STUDENT', studentId: 101 });
+  assert.deepEqual(selectionInput(actor, { teachingClassId: 501 }), {
+    studentId: 101, teachingClassId: 501,
+  });
+  assert.throws(() => selectionInput(actor, { teachingClassId: 501, studentId: 102 }), TypeError);
+  for (const invalid of [null, { role: 'TEACHER', studentId: 101 }, { role: 'STUDENT', studentId: 0 }])
+    assert.throws(() => selectionInput(invalid, { teachingClassId: 501 }), TypeError);
+});
+test('9-8 成功DTO名称、目标、数值与状态符合契约', () => {
+  const dto = { id: 1001, teachingClassId: 501, status: 'ACTIVE' };
+  assert.equal(validateSuccessDto(dto, 501), dto);
+  for (const invalid of [
+    null, { enrollmentId: 1001, teachingClassId: 501, status: 'ACTIVE' },
+    { ...dto, id: '1001' }, { ...dto, id: 0 },
+    { ...dto, teachingClassId: 502 }, { ...dto, status: 'WITHDRAWN' },
+    { id: 1001, teachingClassId: 501 },
+  ]) assert.throws(() => validateSuccessDto(invalid, 501), TypeError);
+});
 test('9-9 迟到成功不能覆盖新课表', async () => {
   const state = new LatestQuery(),
     a = deferred(),
@@ -94,7 +115,7 @@ test('9-10 历史成功后按当前空课表显示', async () => {
     pending,
     async (key) => {
       trace.push(key);
-      return { status: 200, body: { id: 1001, teachingClassId: 501 } };
+      return { status: 200, body: { id: 1001, teachingClassId: 501, status: 'ACTIVE' } };
     },
     async () => {
       trace.push('timetable');
@@ -117,7 +138,7 @@ test('9-10 网络错误和不匹配快照保持待确认', async () => {
   assert.equal(result.status, 'PENDING');
   result = await recoverSelection(
     pending,
-    async () => ({ status: 200, body: { id: 1001, teachingClassId: 502 } }),
+    async () => ({ status: 200, body: { id: 1001, teachingClassId: 502, status: 'ACTIVE' } }),
     async () => [],
   );
   assert.equal(result.status, 'PENDING');
@@ -125,7 +146,7 @@ test('9-10 网络错误和不匹配快照保持待确认', async () => {
 test('9-10 快照已确认但课表读取失败保留查询恢复入口', async () => {
   const result = await recoverSelection(
     pending,
-    async () => ({ status: 200, body: { id: 1001, teachingClassId: 501 } }),
+    async () => ({ status: 200, body: { id: 1001, teachingClassId: 501, status: 'ACTIVE' } }),
     async () => {
       throw new Error('read failed');
     },

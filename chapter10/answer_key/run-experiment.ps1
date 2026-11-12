@@ -22,7 +22,14 @@ if (Test-Path -LiteralPath $destination) {
     throw 'WorkDirectory must be new'
 }
 New-Item -ItemType Directory -Path $destination | Out-Null
-Copy-Item -LiteralPath (Join-Path $project 'backend') -Destination (Join-Path $destination 'backend') -Recurse
+$sourceBackend = Join-Path $project 'backend'
+foreach ($file in Get-ChildItem -LiteralPath $sourceBackend -File -Recurse) {
+    $relative = [IO.Path]::GetRelativePath($sourceBackend, $file.FullName)
+    if ($relative -match '^(target|evidence)[\\/]') { continue }
+    $target = Join-Path (Join-Path $destination 'backend') $relative
+    New-Item -ItemType Directory -Path (Split-Path $target -Parent) -Force | Out-Null
+    Copy-Item -LiteralPath $file.FullName -Destination $target
+}
 $testDir = Join-Path $destination 'backend\src\test\java\edu\textbook\selection'
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'HistoryIsolationAnswerTest.java') -Destination $testDir
 & $MavenCommand -s (Join-Path $destination 'backend\maven-settings.xml') -f (Join-Path $destination 'backend\pom.xml') -B -ntp '-Dtest=CourseSelectionIntegrationTest,HistoryIsolationAnswerTest#retryingOldDeleteDoesNotWithdrawNewEnrollment' test

@@ -44,5 +44,5 @@ Spring Framework 6.1.14与Spring Security 6.3.4，以pom.xml为准。
 
 六、习题答案
 
-answer_key保存本章习题的代码或数据参考答案，运行方法见其中的运行说明.txt。
+answer_key保存本章习题的代码或数据参考答案，运行方法见其中的README.txt。
 题目条件、分析过程和非代码答案见全书书末。答案与本章示例分开运行。

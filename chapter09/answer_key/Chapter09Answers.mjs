@@ -13,6 +13,18 @@ export function validateBody(body) {
     throw new TypeError('teachingClassId');
   return body.teachingClassId;
 }
+// actor是服务器已认证上下文；本函数不实现认证，也不读取客户端身份字段。
+export function selectionInput(actor, body) {
+  const teachingClassId = validateBody(body);
+  if (actor?.role !== 'STUDENT' || !Number.isSafeInteger(actor.studentId) || actor.studentId <= 0)
+    throw new TypeError('trusted student actor');
+  return Object.freeze({ studentId: actor.studentId, teachingClassId });
+}
+export function validateSuccessDto(body, expectedClass) {
+  if (!Number.isSafeInteger(expectedClass) || expectedClass <= 0 || !validSnapshot(body, expectedClass))
+    throw new TypeError('success dto');
+  return body;
+}
 export class LatestQuery {
   constructor() {
     this.sequence = 0;
@@ -46,7 +58,7 @@ function validSnapshot(body, expectedClass) {
     typeof body === 'object' &&
     Number.isSafeInteger(body.id) &&
     body.id > 0 &&
-    body.teachingClassId === expectedClass
+    body.teachingClassId === expectedClass && body.status === 'ACTIVE'
   );
 }
 function validTimetable(data) {

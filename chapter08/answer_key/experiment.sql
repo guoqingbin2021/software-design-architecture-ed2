@@ -1,4 +1,4 @@
--- 习题8-10。MySQL 8.0，同一连接执行整份脚本。
+-- 习题8-6/8-9。MySQL 8.0，同一连接执行整份脚本。
 -- 仅建立answer_前缀的会话临时表；连接关闭后自动消失，不改工程表。
 CREATE TEMPORARY TABLE answer_student (id BIGINT PRIMARY KEY, name VARCHAR(80));
 
@@ -144,65 +144,6 @@ GROUP BY
     tc.capacity
 ORDER BY
     tc.id;
-
-SELECT
-    tc.id,
-    tc.capacity,
-    COUNT(e.id) AS actual_count
-FROM
-    answer_class tc
-    LEFT JOIN answer_enrollment e ON e.class_id = tc.id
-    AND e.status = 'ACTIVE'
-    AND e.deleted = FALSE
-GROUP BY
-    tc.id,
-    tc.capacity
-HAVING
-    COUNT(e.id) > tc.capacity;
-
-UPDATE answer_class
-SET
-    capacity = 0
-WHERE
-    id = 502;
-
-INSERT INTO
-    answer_enrollment
-VALUES
-    (
-        1006,
-        101,
-        502,
-        'ACTIVE',
-        FALSE,
-        '2026-09-01 01:03:00'
-    );
-
--- 预期502,0,1。
-SELECT
-    tc.id,
-    tc.capacity,
-    COUNT(e.id) AS actual_count
-FROM
-    answer_class tc
-    LEFT JOIN answer_enrollment e ON e.class_id = tc.id
-    AND e.status = 'ACTIVE'
-    AND e.deleted = FALSE
-GROUP BY
-    tc.id,
-    tc.capacity
-HAVING
-    COUNT(e.id) > tc.capacity;
-
-DELETE FROM answer_enrollment
-WHERE
-    id = 1006;
-
-UPDATE answer_class
-SET
-    capacity = 1
-WHERE
-    id = 502;
 
 SELECT
     tc.id,

@@ -26,6 +26,9 @@ public class Chapter08Answers {
         rejects("-0.01");
         rejects("100.01");
         rejects("85.555");
+        rejects("85.125");
+        if (!new Score(new BigDecimal("85.000")).equals(new Score(new BigDecimal("85.00"))))
+            throw new AssertionError();
         if (!new Score(new BigDecimal("85.0")).equals(new Score(new BigDecimal("85.00"))))
             throw new AssertionError();
         try {

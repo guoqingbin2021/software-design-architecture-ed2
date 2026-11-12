@@ -59,3 +59,12 @@ GROUP BY
     tc.capacity
 HAVING
     COUNT(e.id) > tc.capacity;
+
+-- 8-9新增审计条件，独立answer8_*表由MySqlExperiment建立。
+-- actor_teacher_id必须由服务端认证身份取得，不能从客户端请求体取值。
+-- 仅所属教师可逻辑删除WITHDRAWN且未删除记录；重复执行不覆盖原审计。
+UPDATE answer8_enrollment e
+JOIN answer8_class tc ON tc.id=e.class_id
+SET e.deleted=TRUE, e.deleted_at='2026-09-01 02:00:00', e.deleted_by=201
+WHERE e.id=1001 AND tc.teacher_id=201
+  AND e.status='WITHDRAWN' AND e.deleted=FALSE;

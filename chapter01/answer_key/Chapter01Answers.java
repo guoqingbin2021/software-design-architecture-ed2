@@ -21,7 +21,7 @@ public class Chapter01Answers {
 
     public static long payable(List<Line> lines) {
         long sum = subtotal(lines);
-        return sum >= 4500 ? sum - 500 : sum;
+        return sum >= 4000 ? sum - 500 : sum;
     }
 
     public record Receipt(String id, List<Line> lines, long amount) {
@@ -77,9 +77,22 @@ public class Chapter01Answers {
 
     public static void main(String[] args) {
         var lines = List.of(new Line(1250, 2), new Line(800, 3));
+        check(payable(List.of(new Line(3999, 1))) == 3999);
+        check(payable(List.of(new Line(4000, 1))) == 3500);
+        check(payable(List.of()) == 0);
         Receipt r = new Receipt("S01-001", lines, payable(lines));
         check(subtotal(lines) == 4900 && r.amount() == 4400);
         check(payable(List.of(new Line(1250, 2), new Line(900, 3))) == 4700);
+        List<Receipt> consoleReceived = new ArrayList<>(), memoryReceived = new ArrayList<>();
+        Printer consolePrinter = x -> {
+            consoleReceived.add(x);
+            System.out.println("ConsolePrinter: " + x.id() + "|" + x.amount());
+        };
+        Printer memoryPrinter = memoryReceived::add;
+        new Checkout(consolePrinter).submit(r);
+        new Checkout(memoryPrinter).submit(r);
+        check(consoleReceived.equals(List.of(r)) && memoryReceived.equals(List.of(r)));
+        check(lines.equals(List.of(new Line(1250, 2), new Line(800, 3))));
         AtomicInteger outputs = new AtomicInteger();
         Checkout normal = new Checkout(x -> outputs.incrementAndGet());
         normal.submit(r);
@@ -112,6 +125,16 @@ public class Chapter01Answers {
         }
         try {
             subtotal(List.of(new Line(Long.MAX_VALUE, 2)));
+            throw new AssertionError();
+        } catch (ArithmeticException expected) {
+        }
+        try {
+            new Line(-1, 1);
+            throw new AssertionError();
+        } catch (IllegalArgumentException expected) {
+        }
+        try {
+            subtotal(List.of(new Line(Long.MAX_VALUE, 1), new Line(1, 1)));
             throw new AssertionError();
         } catch (ArithmeticException expected) {
         }

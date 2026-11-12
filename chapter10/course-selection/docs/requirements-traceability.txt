@@ -28,5 +28,5 @@ backend/target/surefire-reports/，前后端构建和测试日志写入
 evidence/pipeline-*.log，总体结果写入 evidence/pipeline-result.txt。
 操作后的独立SQL检查使用 scripts/verify-invariants.sql，每条查询应返回零条违规记录。
 原请求快照查询由queriesOriginalRequestSnapshotWithinCurrentStudentScope验证；
-安全整数输入由rejectsUnsafeStringAndFractionalPublicIdentifiers验证。当前结果见README.txt，
+安全整数输入由rejectsUnsafeStringAndFractionalPublicIdentifiers验证。当前结果见test-report.txt，
 重新执行后以本机JUnit报告为准。

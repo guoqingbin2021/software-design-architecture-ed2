@@ -1,9 +1,42 @@
 import java.util.*;
+import java.util.function.Supplier;
 
 /** 习题4-8至4-10。设备与支付均为内存假对象。 */
 public class Chapter04Answers {
     public interface Pay {
         String pay(String order, long amount);
+    }
+
+    /** 工厂方法：公共结算流程通过子类创建支付对象。 */
+    public abstract static class Checkout {
+        protected abstract Pay createPay();
+        public final String checkout(String order, long amount) {
+            if (order == null || order.isBlank() || amount < 0)
+                throw new IllegalArgumentException("order/amount");
+            return createPay().pay(order, amount);
+        }
+    }
+
+    public static class AliCheckout extends Checkout {
+        protected Pay createPay() { return new AliPay(); }
+    }
+
+    public static class WechatCheckout extends Checkout {
+        protected Pay createPay() { return new WechatPay(); }
+    }
+
+    public static class AliPay implements Pay {
+        public String pay(String order, long amount) { return "ALI:" + order + ":" + amount; }
+    }
+    public static class WechatPay implements Pay {
+        public String pay(String order, long amount) { return "WECHAT:" + order + ":" + amount; }
+    }
+    private static final Map<String, Supplier<Checkout>> creators = Map.of(
+            "ALI", AliCheckout::new, "WECHAT", WechatCheckout::new);
+    public static Checkout checkoutFor(String id) {
+        Supplier<Checkout> creator = creators.get(id);
+        if (creator == null) throw new IllegalArgumentException("unknown channel");
+        return creator.get();
     }
 
     public static Pay factory(String id) {
@@ -56,6 +89,10 @@ public class Chapter04Answers {
     }
 
     public static void main(String[] args) {
+        check(checkoutFor("ALI").checkout("O001", 4900).equals("ALI:O001:4900"));
+        check(checkoutFor("WECHAT").checkout("O001", 4900).equals("WECHAT:O001:4900"));
+        try { checkoutFor("OTHER"); throw new AssertionError(); }
+        catch (IllegalArgumentException expected) {}
         check(factory("ALI").pay("O001", 4900).equals("ALI:O001:4900"));
         check(factory("WECHAT").pay("O001", 4900).equals("WECHAT:O001:4900"));
         try {

@@ -1,6 +1,7 @@
-dimension,baseline_weight,alternate_weight,A,B,C,D
-query_scaling,0.25,0.40,3,3,3,5
-fault_isolation,0.20,0.20,3,3,3,4
-rule_maintenance,0.20,0.20,2,4,4,3
-lower_cost,0.20,0.05,5,4,3,2
-lower_migration_risk,0.15,0.15,4,4,3,2
+scenario,scheme,maintainability_weight,offline_support_weight,operations_simplicity_weight,maintainability_level,offline_support_level,operations_simplicity_level,score,eligibility,assumption
+baseline,A,0.40,0.35,0.25,4,5,4,87,eligible_under_given_constraints,screen_hard_constraints_before_ranking
+baseline,B,0.40,0.35,0.25,5,2,3,69,excluded_without_offline_remedy,screen_hard_constraints_before_ranking
+baseline,C,0.40,0.35,0.25,3,5,2,69,eligible_under_given_constraints,screen_hard_constraints_before_ranking
+sensitivity,A,0.70,0.10,0.20,4,5,4,82,eligible_under_given_constraints,compare_only_after_all_hard_constraints_met_or_remedied
+sensitivity,B,0.70,0.10,0.20,5,2,3,86,excluded_without_offline_remedy,compare_only_after_all_hard_constraints_met_or_remedied
+sensitivity,C,0.70,0.10,0.20,3,5,2,60,eligible_under_given_constraints,compare_only_after_all_hard_constraints_met_or_remedied
