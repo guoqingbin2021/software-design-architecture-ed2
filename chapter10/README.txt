@@ -6,4 +6,3 @@ course-selection为Spring Boot、MySQL与Vue组成的完整教学工程。
 
 backend和frontend保存实现及测试，examples保存正文请求与SQL，
 scripts保存初始化、启动和验证脚本，docs保存需求追踪与实际验证结果。
-answer_key保存本章习题参考代码，运行方法见answer_key/README.txt。

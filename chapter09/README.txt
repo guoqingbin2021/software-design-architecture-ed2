@@ -30,8 +30,3 @@ CHECK约束要求MySQL至少8.0.16；容器启动方式还需要Docker Desktop�
     pwsh -File scripts/test.ps1
 加-Integration可运行Docker MySQL集成测试；使用本机专用测试库的配置
 见工程README.txt。集成测试会重建业务数据，只能使用专用测试库。
-
-六、习题答案
-
-answer_key保存本章习题的代码或数据参考答案，运行方法见其中的README.txt。
-题目条件、分析过程和非代码答案见全书书末。答案与本章示例分开运行。

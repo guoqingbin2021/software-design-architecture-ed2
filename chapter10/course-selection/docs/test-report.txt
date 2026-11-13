@@ -8,10 +8,7 @@
    21项真实HTTP/MySQL集成测试，失败0、错误0、跳过0；后端打包成功。
 2. frontend：npm ci --no-audit --no-fund；npm test；npm run build
    36项前端测试通过，失败0；生产构建成功。
-3. answer_key：run-experiment.ps1
-   在临时副本重跑21项集成测试，并增加1项旧DELETE隔离测试，合计22项通过。
-   旧记录退课后新建不同id；再次DELETE旧id不影响新记录；旧幂等键仍返回原快照。
-4. 新MySQL连接执行scripts/verify-invariants.sql和answer_key/invariants.sql，
+3. 新MySQL连接执行scripts/verify-invariants.sql，
    所有检查均无违规记录。
 
 覆盖六项功能、容量竞争、同学生冲突、请求去重、原请求查询、窗口边界、
